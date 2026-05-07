@@ -155,10 +155,20 @@ def fetch_first_sign(term: str) -> SignResult:
 
         for s_term in search_terms:
             try:
-                # Rails permits params[:s]. The deployed app accepts s[]=term style searches.
+                # IMPORTANT: nzsl.nz expects the keyword search parameter to be `s`, not `s[]`.
+                # Using `s[]` can return the unfiltered/default search page, which makes every
+                # token pick the same first result, e.g. “all of you”.
                 r = requests.get(
                     f"{BASE_URL}/signs/search",
-                    params={"s[]": s_term},
+                    params={
+                        "s": s_term,
+                        "hs": "",
+                        "l": "",
+                        "lg": "",
+                        "tag": "",
+                        "usage": "",
+                        "utf8": "✓",
+                    },
                     headers=HEADERS,
                     timeout=12,
                 )
@@ -203,7 +213,7 @@ def fetch_first_sign(term: str) -> SignResult:
     return SignResult(
         query=term,
         gloss=None,
-        page_url=f"{BASE_URL}/signs/search?s%5B%5D={quote_plus(term)}",
+        page_url=f"{BASE_URL}/signs/search?s={quote_plus(term)}",
         video_url=None,
         note="No direct video found. Open the dictionary search link and choose the best sign manually.",
     )
@@ -264,6 +274,7 @@ def main() -> None:
 
     with st.expander("Edit the rough translation rules"):
         st.write("Open `app.py` and edit `PHRASE_MAP`, `WORD_MAP`, and `DROP_WORDS`.")
+        st.write("Dictionary lookup uses the `s=` keyword-search parameter, not `s[]=`.")
         st.write("For better NZSL, treat this as a vocabulary sequencer, not grammar authority.")
 
 
